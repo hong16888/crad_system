@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>首页</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="p-4 pb-20">
+    <h1 class="text-xl font-bold mb-4">欢迎回来</h1>
+
+    <!-- 分类滑动区域 -->
+    <div class="flex overflow-x-auto space-x-3 mb-4" id="category-list">
+      <div class="text-sm px-3 py-1 bg-blue-100 rounded-full whitespace-nowrap">加载中...</div>
+    </div>
+
+    <!-- 热销商品 -->
+    <h2 class="text-lg font-semibold mb-2">🔥 热销商品</h2>
+    <div id="hot-products" class="grid grid-cols-2 gap-4 mb-6">
+      <!-- 热销商品卡片将在这里插入 -->
+    </div>
+
+    <!-- 推荐商品 -->
+    <h2 class="text-lg font-semibold mb-2">⭐ 推荐商品</h2>
+    <div id="recommended-products" class="grid grid-cols-2 gap-4">
+      <!-- 推荐商品卡片将在这里插入 -->
+    </div>
+  </div>
+
+  <!-- 底部导航栏 -->
+  <div class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex justify-around items-center h-14 z-50">
+    <a href="/" class="flex flex-col items-center text-blue-600 text-sm">
+      <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 9.75L12 3l9 6.75v10.5A1.75 1.75 0 0119.25 22H4.75A1.75 1.75 0 013 20.25V9.75z"/>
+      </svg>
+      首页
+    </a>
+    <a href="/orders" class="flex flex-col items-center text-gray-500 text-sm">
+      <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 7h18M3 12h18M3 17h18"/>
+      </svg>
+      订单
+    </a>
+    <a href="/online_orders" class="flex flex-col items-center text-gray-500 text-sm">
+      <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9.75 3v1.5m4.5-1.5v1.5M4.5 7.5h15v11.25a1.5 1.5 0 01-1.5 1.5h-12a1.5 1.5 0 01-1.5-1.5V7.5z"/>
+      </svg>
+      在线订单
+    </a>
+    <a href="/profile" class="flex flex-col items-center text-gray-500 text-sm">
+      <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2"
+           viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M5.121 17.804A10.97 10.97 0 0012 20c2.577 0 4.94-.874 6.879-2.196A4.5 4.5 0 0012 13.5a4.5 4.5 0 00-6.879 4.304zM15 9a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      我的
+    </a>
+  </div>
+
+  <script>
+    async function loadIndexData() {
+      const res = await fetch('/api/index');
+      const data = await res.json();
+
+      const categoryList = document.getElementById('category-list');
+      const hotContainer = document.getElementById('hot-products');
+      const recommendContainer = document.getElementById('recommended-products');
+
+      // 分类
+      categoryList.innerHTML = '';
+      data.categories.forEach(cat => {
+        const item = document.createElement('div');
+        item.className = 'flex-shrink-0 w-20 text-center';
+        item.innerHTML = `
+          <img src="${cat.img_url || '/static/default.png'}" class="w-14 h-14 object-cover rounded-full mx-auto mb-1" onerror="this.src='/static/default.png'">
+          <div class="text-xs truncate">${cat.name}</div>
+        `;
+        categoryList.appendChild(item);
+      });
+
+      // 商品卡片渲染函数
+      const renderCard = (p) => `
+        <div class="bg-white p-2 rounded-xl shadow-sm">
+          <img src="${p.image_url || '/static/default.png'}" onerror="this.src='/static/default.png'" alt="${p.name}" class="w-full h-32 object-cover rounded-md mb-2">
+          <div class="text-sm font-semibold truncate">${p.name}</div>
+          <div class="text-red-500 font-bold text-sm mt-1">￥${p.price}</div>
+        </div>
+      `;
+
+      // 热销商品
+      hotContainer.innerHTML = data.hot_products.map(renderCard).join('');
+
+      // 推荐商品
+      recommendContainer.innerHTML = data.recommended_products.map(renderCard).join('');
+    }
+
+    loadIndexData();
+  </script>
+</body>
+</html>

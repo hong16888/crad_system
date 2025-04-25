@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}圆润商城{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+
+    <!-- 顶部标题和搜索栏 -->
+    <div class="header">
+        <div class="logo">ROUNDISH</div>
+        <div class="search-bar">
+            <input type="text" placeholder="搜索商品...">
+        </div>
+    </div>
+
+    <!-- 页面内容 -->
+    {% block content %}{% endblock %}
+
+    <!-- 底部导航栏 -->
+    <div class="bottom-nav">
+        <a href="{{ url_for('main.index') }}" class="nav-item {% block nav_index %}{% endblock %}">
+            <i class="fas fa-home"></i>
+            <span>首页</span>
+        </a>
+        <a href="{{ url_for('main.orders') }}" class="nav-item {% block nav_orders %}{% endblock %}">
+            <i class="fas fa-clipboard-list"></i>
+            <span>订单</span>
+        </a>
+        <a href="{{ url_for('main.online_orders') }}" class="nav-item {% block nav_online_orders %}{% endblock %}">
+            <i class="fas fa-cloud"></i>
+            <span>在线订单</span>
+        </a>
+        <a href="{{ url_for('main.profile') }}" class="nav-item {% block nav_profile %}{% endblock %}">
+            <i class="fas fa-user"></i>
+            <span>我的</span>
+        </a>
+    </div>
+
+    <script>
+        // 导航栏点击切换 active 状态
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+    </script>
+
+</body>
+</html>

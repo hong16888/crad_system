@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}我的{% endblock %}
+
+{% block content %}
+<h2 class="section-title">我的信息</h2>
+<div class="container">
+    <div class="product-card">
+        <div class="product-info">
+            <div class="product-title">用户名：{{ current_user.username }}</div>
+            <div class="product-price">余额：¥{{ current_user.balance }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block nav_profile %}active{% endblock %}

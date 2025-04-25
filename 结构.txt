@@ -1,0 +1,33 @@
+##flask_card_system/
+##├── app/
+##│   ├── __init__.py           # 应用工厂
+##│   ├── extensions.py         # 扩展初始化
+##│   ├── models.py             # 所有数据模型
+##│   ├── routes.py             # 前台路由
+##│   ├── auth/
+##│   │   ├── routes.py         # 认证路由
+##│   │   └── forms.py          # 登录/注册表单
+##│   ├── admin/
+##│   │   ├── routes.py         # 后台路由
+##│   │   └── forms.py          # 管理表单
+##│   ├── templates/
+##│   │   ├── base.html         # 基础模板
+##│   │   ├── auth
+##│   │   │   ├── login.html    # 登录页
+##│   │   │   └── register.html # 注册页
+##│   │   └── admin/
+##│   │       ├── dashboard.html # 后台主页
+##│   │       └── products.html  # 商品管理
+##│   └── static/
+##│       ├── css/
+##│       ├── js/
+##│       └── images/
+##├── migrations/               # Flask-Migrate 生成
+##├── config.py                 # 配置文件
+##├── requirements.txt          # 依赖列表
+##└── run.py                    # 启动入口
+####
+####//初始化
+####flask db init
+####flask db migrate -m "initial migration"
+####flask db upgrade

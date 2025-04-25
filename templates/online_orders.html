@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}在线订单{% endblock %}
+
+{% block content %}
+<h2 class="section-title">在线订单</h2>
+<div class="container">
+    {% for order in online_orders %}
+    <div class="product-card">
+        <div class="product-info">
+            <div class="product-title">{{ order.product_name }}</div>
+            <div class="product-price">¥{{ order.amount }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block nav_online_orders %}active{% endblock %}
