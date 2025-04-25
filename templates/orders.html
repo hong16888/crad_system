@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>订单列表</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
 
@@ -16,7 +17,7 @@
   </div>
 </div>
 
-<!-- 底部导航栏，与首页保持一致 -->
+<!-- 底部导航栏 -->
 <div class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-inner flex justify-around items-center h-14 z-50">
   <a href="/" class="flex flex-col items-center text-gray-500 text-sm">
     <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" stroke-width="2"
@@ -61,7 +62,6 @@
       1: '已支付',
       2: '已完成',
       3: '已取消',
-      4: '已删除'
     };
 
     data.orders.forEach(order => {
@@ -84,6 +84,7 @@
         </div>
         <div class="mt-3 flex justify-end space-x-2">
           ${order.order_status == 0 ? `
+            <button onclick="payOrder('${order.order_id}', ${order.total_amount})" class="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded">支付</button>
             <button onclick="cancelOrder('${order.order_id}')" class="text-sm px-3 py-1 bg-yellow-100 text-yellow-700 rounded">取消</button>
           ` : ''}
           ${(order.order_status == 2 || order.order_status == 3) ? `
@@ -95,20 +96,178 @@
     });
   }
 
+  /**
+   * 支付订单
+   * @param {string} orderId 订单ID
+   * @param {number} amount 支付金额
+   */
+  async function payOrder(orderId, amount) {
+    const { isConfirmed } = await Swal.fire({
+      title: '确认支付',
+      html: `您确定要支付订单 <strong>${orderId}</strong> 吗？<br>支付金额: <span class="text-red-500">￥${amount.toFixed(2)}</span>`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '确认支付',
+      cancelButtonText: '取消',
+      confirmButtonColor: '#3085d6',
+      reverseButtons: true
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      Swal.fire({
+        title: '正在处理支付...',
+        html: '请稍候，正在连接支付网关',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      const response = await fetch(`/api/orders/${orderId}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '支付请求失败');
+      }
+
+      await Swal.fire({
+        title: '支付成功!',
+        text: '订单已支付成功',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false
+      });
+
+      loadOrders();
+    } catch (error) {
+      await Swal.fire({
+        title: '支付失败!',
+        text: error.message || '支付过程中出现错误',
+        icon: 'error',
+        confirmButtonText: '我知道了'
+      });
+    } finally {
+      Swal.close();
+    }
+  }
+
+  /**
+   * 取消订单
+   */
   async function cancelOrder(orderId) {
-    if (confirm('确定取消该订单吗？')) {
-      await fetch(`/api/orders/${orderId}/cancel`, { method: 'POST' });
+    const { isConfirmed } = await Swal.fire({
+      title: '确认取消订单',
+      text: '取消后订单状态将无法恢复',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: '确认取消',
+      cancelButtonText: '放弃操作',
+      confirmButtonColor: '#3085d6',
+      reverseButtons: true,
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      Swal.fire({
+        title: '正在处理...',
+        html: '请稍候，正在取消订单',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const response = await fetch(`/api/orders/${orderId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '取消订单失败');
+      }
+
+      await Swal.fire({
+        title: '操作成功!',
+        text: '订单已取消',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
       loadOrders();
+    } catch (error) {
+      await Swal.fire({
+        title: '操作失败!',
+        text: error.message || '请求过程中出现错误',
+        icon: 'error',
+        confirmButtonText: '我知道了',
+      });
+    } finally {
+      Swal.close();
     }
   }
 
+  /**
+   * 删除订单
+   */
   async function deleteOrder(orderId) {
-    if (confirm('确定删除该订单吗？')) {
-      await fetch(`/api/orders/${orderId}/delete`, { method: 'POST' });
+    const { isConfirmed } = await Swal.fire({
+      title: '永久删除订单',
+      text: '此操作将永久删除订单记录，无法恢复！',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: '确认删除',
+      cancelButtonText: '放弃删除',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      reverseButtons: true,
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      Swal.fire({
+        title: '正在删除...',
+        html: '正在永久删除订单数据',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      const response = await fetch(`/api/orders/${orderId}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '删除请求失败');
+      }
+
+      await Swal.fire({
+        title: '已删除!',
+        text: '订单数据已永久删除',
+        icon: 'success',
+        confirmButtonText: '确定',
+        timer: 3000,
+        timerProgressBar: true,
+      });
+
       loadOrders();
+    } catch (error) {
+      await Swal.fire({
+        title: '删除失败!',
+        html: `<div style="color: #ff4444">${error.message}</div>`,
+        icon: 'error',
+      });
+    } finally {
+      Swal.close();
     }
   }
 
+  // 页面加载时获取订单列表
   loadOrders();
 </script>
 </body>

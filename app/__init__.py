@@ -32,7 +32,6 @@ def create_app():
 
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
-
 @event.listens_for(Engine, "before_cursor_execute")
 def _print_sql(conn, cursor, statement, parameters, context, executemany):
     print("----- 实际 SQL -----")

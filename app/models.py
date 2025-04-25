@@ -1,3 +1,8 @@
+import string
+from random import random
+
+from sqlalchemy import text
+
 from app.extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
@@ -23,14 +28,17 @@ class User(UserMixin, db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
+    email = db.Column(db.String(100))
     phone = db.Column(db.String(20))
     balance = db.Column(db.Numeric(10, 2), default=0.00)
     register_time = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
     status = db.Column(db.SmallInteger, default=1)  # 0-禁用 1-正常
-    api_token = db.Column(db.String(100))
+    api_token = db.Column(db.String(100), unique=True)
     ip_address = db.Column(db.String(50))
+    invite_code = db.Column(db.String(50))
+    referrer_id = db.Column(db.String(50))  # 推荐人的 user_id
+
 
     # Flask-Login 集成
     def get_id(self):
@@ -43,11 +51,12 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    # 关系
+    # 用户与订单的关系（假设有 Order 表）
     orders = db.relationship('Order', backref='user', lazy='dynamic')
 
     @property
     def is_admin(self):
+        from app.models import Admin  # 防止循环导入
         admin = Admin.query.filter_by(username=self.username).first()
         return admin is not None
 
@@ -61,7 +70,10 @@ class User(UserMixin, db.Model):
             'register_time': self.register_time.isoformat() if self.register_time else None,
             'last_login': self.last_login.isoformat() if self.last_login else None,
             'status': self.status,
-            'ip_address': self.ip_address
+            'ip_address': self.ip_address,
+            'invite_code': self.invite_code,
+            'referrer_id': self.referrer_id
+
         }
 
 # 商品分类模型
@@ -185,7 +197,14 @@ class Inventory(db.Model):
             'batch_number': self.batch_number
         }
 
-# 订单模型
+    # ✅ 新增：获取指定商品的可用库存卡
+    @classmethod
+    def get_available_cards(cls, product_id, limit=1):
+        return cls.query.filter_by(product_id=product_id, status=0).limit(limit).all()
+
+
+
+ # 订单模型
 class Order(db.Model):
     __tablename__ = 'orders'
 
@@ -195,18 +214,32 @@ class Order(db.Model):
     quantity = db.Column(db.Integer, default=1)
     total_amount = db.Column(db.Numeric(10, 2), nullable=False)
     payment_method = db.Column(db.String(20))  # alipay/wechat/balance
-    order_status = db.Column(db.SmallInteger, default=0)  # 0-待支付 1-已支付 2-已完成 3-已取消
+    order_status = db.Column(db.SmallInteger, default=0)  # 0-待支付 1-已支付 2-已完成 3-已取消 4-已删除
     create_time = db.Column(db.DateTime, default=datetime.utcnow)
     pay_time = db.Column(db.DateTime)
     complete_time = db.Column(db.DateTime)
     ip_address = db.Column(db.String(50))
     contact_info = db.Column(db.String(100))
+
     product = db.relationship('Product', backref='orders')
-    # 关系
     cards = db.relationship('OrderCard', backref='order', lazy='dynamic')
     payment = db.relationship('Payment', backref='order', uselist=False)
 
-    # 状态管理方法
+    # ✅ 添加类方法：用于创建订单
+    @classmethod
+    def create_order(cls, user_id, product_id, quantity, total_amount, ip_address=None, contact_info=None):
+        order = cls(
+            order_id=generate_order_id(),
+            user_id=user_id,
+            product_id=product_id,
+            quantity=quantity,
+            total_amount=total_amount,
+            ip_address=ip_address,
+            contact_info=contact_info
+        )
+        db.session.add(order)
+        return order
+
     def mark_as_paid(self, payment_method, transaction_id=None):
         self.order_status = 1
         self.payment_method = payment_method
@@ -227,7 +260,6 @@ class Order(db.Model):
 
     def mark_as_cancelled(self):
         self.order_status = 3
-        # 释放关联的卡密
         for card in self.cards:
             card.card.mark_as_available()
         return self

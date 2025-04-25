@@ -10,21 +10,21 @@
   <div class="p-4 pb-20">
     <h1 class="text-xl font-bold mb-4">欢迎回来</h1>
 
-    <!-- 分类滑动区域 -->
+    <!-- 分类滑动区域（手动滑动） -->
     <div class="flex overflow-x-auto space-x-3 mb-4" id="category-list">
       <div class="text-sm px-3 py-1 bg-blue-100 rounded-full whitespace-nowrap">加载中...</div>
     </div>
 
     <!-- 热销商品 -->
-    <h2 class="text-lg font-semibold mb-2">🔥 热销商品</h2>
-    <div id="hot-products" class="grid grid-cols-2 gap-4 mb-6">
-      <!-- 热销商品卡片将在这里插入 -->
+    <h2 class="text-base font-semibold mb-1">🔥 热销商品</h2>
+    <div id="hot-products" class="grid grid-cols-2 gap-2 mb-2">
+      <!-- 热销商品卡片 -->
     </div>
 
-    <!-- 推荐商品 -->
-    <h2 class="text-lg font-semibold mb-2">⭐ 推荐商品</h2>
-    <div id="recommended-products" class="grid grid-cols-2 gap-4">
-      <!-- 推荐商品卡片将在这里插入 -->
+    <!-- 所有商品 -->
+    <h2 class="text-base font-semibold mb-1">🛍️ 所有商品</h2>
+    <div id="all-products" class="grid grid-cols-3 gap-2">
+      <!-- 所有商品卡片 -->
     </div>
   </div>
 
@@ -71,34 +71,42 @@
 
       const categoryList = document.getElementById('category-list');
       const hotContainer = document.getElementById('hot-products');
-      const recommendContainer = document.getElementById('recommended-products');
+      const allContainer = document.getElementById('all-products');
 
-      // 分类
+      // 分类列表
       categoryList.innerHTML = '';
       data.categories.forEach(cat => {
         const item = document.createElement('div');
-        item.className = 'flex-shrink-0 w-20 text-center';
+        item.className = 'flex-shrink-0 w-16 text-center';
         item.innerHTML = `
-          <img src="${cat.img_url || '/static/default.png'}" class="w-14 h-14 object-cover rounded-full mx-auto mb-1" onerror="this.src='/static/default.png'">
+          <img src="${cat.img_url || '/static/default.png'}" class="w-12 h-12 object-cover rounded-full mx-auto mb-1" onerror="this.src='/static/default.png'">
           <div class="text-xs truncate">${cat.name}</div>
         `;
         categoryList.appendChild(item);
       });
 
-      // 商品卡片渲染函数
-      const renderCard = (p) => `
-        <div class="bg-white p-2 rounded-xl shadow-sm">
-          <img src="${p.image_url || '/static/default.png'}" onerror="this.src='/static/default.png'" alt="${p.name}" class="w-full h-32 object-cover rounded-md mb-2">
-          <div class="text-sm font-semibold truncate">${p.name}</div>
-          <div class="text-red-500 font-bold text-sm mt-1">￥${p.price}</div>
-        </div>
-      `;
+      // 卡片渲染函数
+      const renderCard = (p, size = 'normal') => {
+        const imgClass = size === 'small' ? 'h-20' : 'h-24';
+        const fontSize = size === 'small' ? 'text-xs' : 'text-sm';
+        const priceSize = size === 'small' ? 'text-xs' : 'text-sm';
+        return `
+          <a href="/product/${p.product_id}">
+            <div class="bg-white p-0 rounded-xl shadow-sm text-center">
+              <img src="${p.image_url || '/static/default.png'}" onerror="this.src='/static/default.png'" alt="${p.name}" class="w-full ${imgClass} object-cover rounded mb-1">
+              <div class="${fontSize} truncate">${p.name}</div>
+              <div class="text-red-500 font-bold ${priceSize} mt-0.5">￥${p.price}</div>
+            </div>
+          </a>
+        `;
+      };
 
-      // 热销商品
-      hotContainer.innerHTML = data.hot_products.map(renderCard).join('');
+      // 渲染热销（2列）
+      const hotProducts = data.all_products.filter(p => p.is_hot).slice(0, 4);
+      hotContainer.innerHTML = hotProducts.map(p => renderCard(p)).join('');
 
-      // 推荐商品
-      recommendContainer.innerHTML = data.recommended_products.map(renderCard).join('');
+      // 渲染所有商品（3列，小卡片）
+      allContainer.innerHTML = data.all_products.map(p => renderCard(p, 'small')).join('');
     }
 
     loadIndexData();
